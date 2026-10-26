@@ -71,8 +71,8 @@ namespace MonitorHub
         // barra de rolagem escura (tema escuro do Windows)
         public static void Dark(IntPtr h) { try { SetWindowTheme(h, "DarkMode_Explorer", null); } catch { } }
         [DllImport("user32.dll")] public static extern bool SetProcessDpiAwarenessContext(IntPtr v);
-        // Per-Monitor v2: cada monitor usa seus pixels reais, sem o Windows esticar/encolher janelas
-        public static void DpiAware() { try { if (SetProcessDpiAwarenessContext((IntPtr)(-4))) return; } catch { } SetProcessDPIAware(); }
+        // Per-Monitor (v1): pixels reais em cada monitor e sem o WinForms reescalar fontes/controles ao trocar de escala
+        public static void DpiAware() { try { if (SetProcessDpiAwarenessContext((IntPtr)(-3))) return; } catch { } SetProcessDPIAware(); }
 
         public static readonly int[] Scales = { 100, 125, 150, 175, 200, 225, 250, 300, 350, 400, 450, 500 };
 
