@@ -378,8 +378,8 @@ namespace MonitorHub
                 return;
             }
             var font = Font;   // Shrink: diminui a fonte até o texto caber inteiro (sem "...")
-            if (Shrink) { float fs = Font.Size; while (fs > 8.7f && TextRenderer.MeasureText(Text, font).Width > Width - 14) { fs -= 0.5f; font = new Font(Font.FontFamily, fs, Font.Style, Font.Unit); } }
-            TextRenderer.DrawText(g, Text, font, new Rectangle(0, 0, Width, Height), fc, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine | TextFormatFlags.EndEllipsis);
+            if (Shrink) { float fs = Font.Size; while (fs > 8.7f && UI.Measure(Text, font).Width > Width - 14) { fs -= 0.5f; font = new Font(Font.FontFamily, fs, Font.Style, Font.Unit); } }
+            UI.Text(g, Text, font, new Rectangle(0, 0, Width, Height), fc, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine | TextFormatFlags.EndEllipsis);
         }
     }
 
@@ -405,7 +405,7 @@ namespace MonitorHub
                 using (var p = new Pen(over && Enabled ? Color.FromArgb(200, 30, 50) : Color.FromArgb(48, 48, 60))) g.DrawPath(p, gp);
             }
             var fc = Enabled ? ForeColor : Color.FromArgb(90, 90, 100);
-            TextRenderer.DrawText(g, SelectedItem == null ? "—" : SelectedItem.ToString(), Font, new Rectangle(14, 0, Width - 40, Height), fc, TextFormatFlags.VerticalCenter | TextFormatFlags.Left);
+            UI.Text(g, SelectedItem == null ? "—" : SelectedItem.ToString(), Font, new Rectangle(14, 0, Width - 40, Height), fc, TextFormatFlags.VerticalCenter | TextFormatFlags.Left);
             float cx = Width - 20, cy = Height / 2f;
             using (var p = new Pen(Enabled ? Color.FromArgb(200, 30, 50) : fc, 2f)) { p.StartCap = p.EndCap = LineCap.Round; g.DrawLines(p, new[] { new PointF(cx - 5, cy - 2.5f), new PointF(cx, cy + 2.5f), new PointF(cx + 5, cy - 2.5f) }); }
         }
@@ -421,7 +421,7 @@ namespace MonitorHub
                 if (de.Index < 0) return; bool h = de.Index == hot;
                 using (var b = new SolidBrush(Color.FromArgb(22, 22, 30))) de.Graphics.FillRectangle(b, de.Bounds);
                 if (h) { de.Graphics.SmoothingMode = SmoothingMode.AntiAlias; using (var gp = MainForm.Round(new RectangleF(de.Bounds.X + 3, de.Bounds.Y + 2, de.Bounds.Width - 6, de.Bounds.Height - 4), 12)) using (var b = new SolidBrush(Color.FromArgb(200, 30, 50))) de.Graphics.FillPath(b, gp); }
-                TextRenderer.DrawText(de.Graphics, "  " + lb.Items[de.Index], Font, de.Bounds, h ? Color.White : Color.Gainsboro, TextFormatFlags.VerticalCenter | TextFormatFlags.Left);
+                UI.Text(de.Graphics, "  " + lb.Items[de.Index], Font, de.Bounds, h ? Color.White : Color.Gainsboro, TextFormatFlags.VerticalCenter | TextFormatFlags.Left);
             };
             lb.MouseMove += delegate(object o, MouseEventArgs me) { int i = lb.IndexFromPoint(me.Location); if (i != hot) { hot = i; lb.Invalidate(); } };
             var host = new ToolStripControlHost(lb) { Padding = Padding.Empty, Margin = Padding.Empty, AutoSize = false, Size = lb.Size };
@@ -510,8 +510,8 @@ namespace MonitorHub
             }
             // nome (diminui a fonte até caber inteiro)
             var font = UI.F("Segoe UI Semibold", 9f); float fs = 9f;
-            while (fs > 6.5f && TextRenderer.MeasureText(Text, font).Width > Width - 14) { fs -= 0.5f; font = UI.F("Segoe UI Semibold", fs); }
-            TextRenderer.DrawText(g, Text, font, new Rectangle(0, Height - 28, Width, 22), Color.Gainsboro, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine);
+            while (fs > 6.5f && UI.Measure(Text, font).Width > Width - 14) { fs -= 0.5f; font = UI.F("Segoe UI Semibold", fs); }
+            UI.Text(g, Text, font, new Rectangle(0, Height - 28, Width, 22), Color.Gainsboro, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine);
         }
     }
 
@@ -519,6 +519,28 @@ namespace MonitorHub
     public static class UI
     {
         public static Font F(string name, float pt, FontStyle st = FontStyle.Regular) { return new Font(name, pt * 96f / 72f, st, GraphicsUnit.Pixel); }
+
+        // Texto desenhado com GDI+ (respeita os pixels fixos). O TextRenderer (GDI) reescala a fonte pela
+        // escala do Windows em telas com 125%+ e cortava os textos dos botões.
+        static readonly Graphics mg = Graphics.FromImage(new Bitmap(1, 1));
+        public static Size Measure(string s, Font f) { var z = mg.MeasureString(s ?? "", f, PointF.Empty, StringFormat.GenericTypographic); return new Size((int)Math.Ceiling(z.Width) + 4, (int)Math.Ceiling(z.Height)); }
+        public static Size Measure(Graphics g, string s, Font f) { return Measure(s, f); }
+        public static void Text(Graphics g, string s, Font f, Rectangle r, Color c, TextFormatFlags fl = TextFormatFlags.Left)
+        {
+            var sf = new StringFormat(StringFormat.GenericTypographic);
+            sf.Alignment = (fl & TextFormatFlags.HorizontalCenter) != 0 ? StringAlignment.Center : (fl & TextFormatFlags.Right) != 0 ? StringAlignment.Far : StringAlignment.Near;
+            sf.LineAlignment = (fl & TextFormatFlags.VerticalCenter) != 0 ? StringAlignment.Center : (fl & TextFormatFlags.Bottom) != 0 ? StringAlignment.Far : StringAlignment.Near;
+            if ((fl & TextFormatFlags.WordBreak) == 0) sf.FormatFlags |= StringFormatFlags.NoWrap;
+            sf.Trimming = (fl & TextFormatFlags.EndEllipsis) != 0 ? StringTrimming.EllipsisCharacter : StringTrimming.None;
+            sf.FormatFlags |= StringFormatFlags.MeasureTrailingSpaces;
+            g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
+            using (var b = new SolidBrush(c)) g.DrawString(s ?? "", f, b, r, sf);
+        }
+        public static void Text(Graphics g, string s, Font f, Point p, Color c)
+        {
+            g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
+            using (var b = new SolidBrush(c)) g.DrawString(s ?? "", f, b, p, StringFormat.GenericTypographic);
+        }
     }
 
     public class RoundPanel : Panel
@@ -640,7 +662,7 @@ namespace MonitorHub
             hzBox.SelectedIndexChanged += delegate { if (hzBox.SelectedItem != null) { mons[sel].Hz = ((HzItem)hzBox.SelectedItem).Hz; canvas.Invalidate(); } };
             Controls.Add(hzBox); y += 44;
 
-            Controls.Add(Title(L.T("ESCALA DO WINDOWS"), y)); y += 28;
+            int scaleY = y; Controls.Add(Title(L.T("ESCALA DO WINDOWS"), y)); y += 28;
             scaleRow = new FlowLayoutPanel { Left = 20, Top = y, Width = 820, Height = 44 }; Controls.Add(scaleRow); y += 56;
 
             info = new Label { Left = 20, Top = y + 10, Width = 225, Height = 24, ForeColor = Color.Gray }; Controls.Add(info);
@@ -653,10 +675,10 @@ namespace MonitorHub
             int rx = 840;
             foreach (var b in new FlatBtn[] { applyBtn, reload, crtBtn, cal })
             {
-                b.Width = Math.Max(b.Width, TextRenderer.MeasureText(b.Text, b.Font).Width + 36);
+                b.Width = Math.Max(b.Width, UI.Measure(b.Text, b.Font).Width + 36);
                 rx -= b.Width; b.Left = rx; rx -= 8;
             }
-            info.Width = Math.Max(60, rx - info.Left);
+            info.Left = 360; info.Top = scaleY; info.Width = 480; info.Height = 22; info.TextAlign = ContentAlignment.MiddleRight;
 
             // desloca o conteúdo para abrir espaço para a coluna global à esquerda
             foreach (Control c in Controls) c.Left += LW;
@@ -791,7 +813,7 @@ namespace MonitorHub
             return f.ShowDialog(this) == DialogResult.OK ? tb.Text.Trim() : null;
         }
 
-        Label Title(string t, int y) { return new Label { Text = t, Left = 20, Top = y, AutoSize = true, ForeColor = Color.FromArgb(230, 70, 90), Font = UI.F("Segoe UI Semibold", 8.5f) }; }
+        Label Title(string t, int y) { return new Label { Text = t, Left = 20, Top = y, AutoSize = true, ForeColor = Color.FromArgb(230, 70, 90), Font = UI.F("Segoe UI Semibold", 10.5f) }; }
         Label Lbl(string t, int x, int y) { return new Label { Text = t, Left = x, Top = y, AutoSize = true }; }
 
         class HzItem { public int Hz; public override string ToString() { return Hz + " Hz"; } }
@@ -819,14 +841,14 @@ namespace MonitorHub
             disBtn.Enabled = m.Enabled && !m.Primary;
             priBtn.Enabled = !m.Primary; priBtn.Text = m.Primary ? L.F("{0} é o principal", m.Short) : L.F("Definir {0} como principal", m.Short);
             // botão do tamanho do texto, encostado à esquerda; "Desabilitar" logo ao lado
-            priBtn.Width = TextRenderer.MeasureText(priBtn.Text, priBtn.Font).Width + 44;
-            disBtn.Width = TextRenderer.MeasureText(disBtn.Text, disBtn.Font).Width + 40;
+            priBtn.Width = UI.Measure(priBtn.Text, priBtn.Font).Width + 44;
+            disBtn.Width = UI.Measure(disBtn.Text, disBtn.Font).Width + 40;
             disBtn.Left = priBtn.Right + 10;
 
             scaleRow.Controls.Clear();
             foreach (var sc in m.ScaleOptions)
             {
-                int s2 = sc; var b = new FlatBtn(sc + "%") { Width = 66 };
+                int s2 = sc; var b = new FlatBtn(sc + "%") { Width = 74 }; b.Width = Math.Max(74, UI.Measure(b.Text, b.Font).Width + 24);
                 b.SetActive(sc == m.Scale); b.Enabled = m.Enabled;
                 b.Click += delegate { mons[sel].Scale = s2; Refresh2(); }; scaleRow.Controls.Add(b);
             }

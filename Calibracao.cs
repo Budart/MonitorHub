@@ -109,9 +109,9 @@ namespace MonitorHub
                 bool small = W < 900; int bw = Math.Min(760, W - 16), bh = small ? 84 : 106;
                 var r = new Rectangle((W - bw) / 2, H - bh - (small ? 8 : 30), bw, bh);
                 using (var b = new SolidBrush(Color.FromArgb(220, 12, 12, 16))) using (var p = MainForm.Round(r, 24)) g.FillPath(b, p);
-                TextRenderer.DrawText(g, (Idx + 1) + "/" + Pats.Length + "  ·  " + L.T(Pats[Idx][0]), UI.F("Segoe UI Semibold", small ? 9f : 12f), new Rectangle(r.X + 12, r.Y + 6, r.Width - 24, 20), Color.FromArgb(240, 70, 90), TextFormatFlags.Left);
-                TextRenderer.DrawText(g, L.T(Pats[Idx][1]), UI.F("Segoe UI", small ? 7.5f : 10f), new Rectangle(r.X + 12, r.Y + (small ? 26 : 32), r.Width - 24, small ? 36 : 48), Color.Gainsboro, TextFormatFlags.Left | TextFormatFlags.WordBreak);
-                TextRenderer.DrawText(g, L.T("clique / → próximo   ·   botão direito / ← anterior   ·   H esconde dicas   ·   Esc sai"), UI.F("Segoe UI", small ? 6.5f : 8.5f), new Rectangle(r.X + 12, r.Bottom - (small ? 16 : 22), r.Width - 24, 16), Color.Gray, TextFormatFlags.Left);
+                UI.Text(g, (Idx + 1) + "/" + Pats.Length + "  ·  " + L.T(Pats[Idx][0]), UI.F("Segoe UI Semibold", small ? 9f : 12f), new Rectangle(r.X + 12, r.Y + 6, r.Width - 24, 20), Color.FromArgb(240, 70, 90), TextFormatFlags.Left);
+                UI.Text(g, L.T(Pats[Idx][1]), UI.F("Segoe UI", small ? 7.5f : 10f), new Rectangle(r.X + 12, r.Y + (small ? 26 : 32), r.Width - 24, small ? 36 : 48), Color.Gainsboro, TextFormatFlags.Left | TextFormatFlags.WordBreak);
+                UI.Text(g, L.T("clique / → próximo   ·   botão direito / ← anterior   ·   H esconde dicas   ·   Esc sai"), UI.F("Segoe UI", small ? 6.5f : 8.5f), new Rectangle(r.X + 12, r.Bottom - (small ? 16 : 22), r.Width - 24, 16), Color.Gray, TextFormatFlags.Left);
             }
         }
 
@@ -151,7 +151,7 @@ namespace MonitorHub
             {
                 int v = val(i); float x = (W - n * s) / 2 + i * s;
                 Fill(g, G(v), x + 4, (H - s) / 2, s - 8, s - 8);
-                TextRenderer.DrawText(g, v.ToString(), UI.F("Segoe UI", 10f), new Point((int)x + 6, (int)((H + s) / 2)), G(label));
+                UI.Text(g, v.ToString(), UI.F("Segoe UI", 10f), new Point((int)x + 6, (int)((H + s) / 2)), G(label));
             }
         }
 
@@ -214,8 +214,8 @@ namespace MonitorHub
                     {
                         var c = k % 2 == 0 ? Color.White : Color.Red;
                         Box(g, c, 2, Inset(R, k * 2 / 100f));
-                        TextRenderer.DrawText(g, k + "%", UI.F("Segoe UI", 8f), new Point((int)(cx - 10), (int)(R.Y + R.Height * k / 100f - 1)), c);
-                        TextRenderer.DrawText(g, k + "%", UI.F("Segoe UI", 8f), new Point((int)(R.X + R.Width * k / 100f + 2), (int)(cy - 6)), c);
+                        UI.Text(g, k + "%", UI.F("Segoe UI", 8f), new Point((int)(cx - 10), (int)(R.Y + R.Height * k / 100f - 1)), c);
+                        UI.Text(g, k + "%", UI.F("Segoe UI", 8f), new Point((int)(R.X + R.Width * k / 100f + 2), (int)(cy - 6)), c);
                     }
                     Box(g, Color.Lime, 2, new RectangleF(R.X + 1, R.Y + 1, R.Width - 2, R.Height - 2));
                     break;
@@ -223,11 +223,11 @@ namespace MonitorHub
                     {
                         var cs = new[] { Color.Red, Color.Lime, Color.Blue, Color.White }; var nm = new[] { "R", "G", "B", "W" };
                         float lx = R.X + R.Width * 0.12f, bw = (R.Right - R.Width * 0.03f - lx) / 16f, bh = R.Height * 0.15f;
-                        for (int i = 0; i < 16; i++) TextRenderer.DrawText(g, i.ToString("X"), UI.F("Consolas", 12f, FontStyle.Bold), new Point((int)(lx + i * bw + bw / 3), (int)(R.Y + R.Height * 0.06f)), Color.Orange);
+                        for (int i = 0; i < 16; i++) UI.Text(g, i.ToString("X"), UI.F("Consolas", 12f, FontStyle.Bold), new Point((int)(lx + i * bw + bw / 3), (int)(R.Y + R.Height * 0.06f)), Color.Orange);
                         for (int k = 0; k < 4; k++)
                         {
                             float y = R.Y + R.Height * 0.14f + k * bh * 1.25f;
-                            TextRenderer.DrawText(g, nm[k], UI.F("Consolas", 14f, FontStyle.Bold), new Point((int)(R.X + R.Width * 0.04f), (int)(y + bh / 3)), cs[k]);
+                            UI.Text(g, nm[k], UI.F("Consolas", 14f, FontStyle.Bold), new Point((int)(R.X + R.Width * 0.04f), (int)(y + bh / 3)), cs[k]);
                             for (int i = 0; i < 16; i++) { int v = i * 17; Fill(g, Color.FromArgb(cs[k].R * v / 255, cs[k].G * v / 255, cs[k].B * v / 255), lx + i * bw, y, bw + 1, bh); }
                         }
                     }
@@ -289,7 +289,7 @@ namespace MonitorHub
             up = new FlatBtn("▲") { Left = 134, Top = h - 48, Width = 44, Height = 34, Radius = 17 };
             down = new FlatBtn("▼") { Left = 184, Top = h - 48, Width = 44, Height = 34, Radius = 17 };
             var close = new FlatBtn("✕  " + L.T("Fechar")) { Top = h - 48, Height = 34, Radius = 17 };
-            close.Width = TextRenderer.MeasureText(close.Text, close.Font).Width + 36; close.Left = w - close.Width - 20;
+            close.Width = UI.Measure(close.Text, close.Font).Width + 36; close.Left = w - close.Width - 20;
             prev.Click += delegate { CalibForm.Prev(); }; next.Click += delegate { CalibForm.Next(); };
             up.Click += delegate { CalibForm.Adjust(1); }; down.Click += delegate { CalibForm.Adjust(-1); };
             close.Click += delegate { CalibForm.Stop(); };
