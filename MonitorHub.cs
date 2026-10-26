@@ -333,7 +333,7 @@ namespace MonitorHub
     public class FlatBtn : Button
     {
         public Color Base = Color.FromArgb(24, 24, 30), Hover = Color.FromArgb(42, 42, 54), Border = Color.FromArgb(48, 48, 60);
-        public int Radius = 10; public bool Active, Shrink; protected bool over, down;
+        public int Radius = 10; public bool Active, Shrink = true; protected bool over, down;
         public FlatBtn(string t)
         {
             Text = t; SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.SupportsTransparentBackColor, true);
@@ -378,7 +378,7 @@ namespace MonitorHub
                 return;
             }
             var font = Font;   // Shrink: diminui a fonte até o texto caber inteiro (sem "...")
-            if (Shrink) { float fs = Font.Size; while (fs > 8.7f && UI.Measure(Text, font).Width > Width - 14) { fs -= 0.5f; font = new Font(Font.FontFamily, fs, Font.Style, Font.Unit); } }
+            if (Shrink) { float fs = Font.Size; while (fs > 9f && UI.Measure(Text, font).Width > Width - 14) { fs -= 0.5f; font = new Font(Font.FontFamily, fs, Font.Style, Font.Unit); } }
             UI.Text(g, Text, font, new Rectangle(0, 0, Width, Height), fc, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine | TextFormatFlags.EndEllipsis);
         }
     }
@@ -485,7 +485,7 @@ namespace MonitorHub
                 using (var pn = new Pen(over ? Color.FromArgb(200, 30, 50) : Color.FromArgb(48, 48, 60))) g.DrawPath(pn, gp);
             }
             // miniatura
-            var area = new RectangleF(10, 8, Width - 20, Height - 36);
+            var area = new RectangleF(10, 8, Width - 20, Height - 40);
             var on = p.Mons.Where(m => m.Enabled).ToList();
             if (on.Count > 0)
             {
@@ -511,14 +511,15 @@ namespace MonitorHub
             // nome (diminui a fonte até caber inteiro)
             var font = UI.F("Segoe UI Semibold", 9f); float fs = 9f;
             while (fs > 6.5f && UI.Measure(Text, font).Width > Width - 14) { fs -= 0.5f; font = UI.F("Segoe UI Semibold", fs); }
-            UI.Text(g, Text, font, new Rectangle(0, Height - 28, Width, 22), Color.Gainsboro, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine);
+            UI.Text(g, Text, font, new Rectangle(0, Height - 30, Width, 26), Color.Gainsboro, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine);
         }
     }
 
     // fontes em pixels fixos (equivalente a 100%): o visual não muda com a escala do Windows
     public static class UI
     {
-        public static Font F(string name, float pt, FontStyle st = FontStyle.Regular) { return new Font(name, pt * 96f / 72f, st, GraphicsUnit.Pixel); }
+        public const float Z = 1.4f;   // tamanho geral dos textos
+        public static Font F(string name, float pt, FontStyle st = FontStyle.Regular) { return new Font(name, pt * Z * 96f / 72f, st, GraphicsUnit.Pixel); }
 
         // Texto desenhado com GDI+ (respeita os pixels fixos). O TextRenderer (GDI) reescala a fonte pela
         // escala do Windows em telas com 125%+ e cortava os textos dos botões.
@@ -637,8 +638,8 @@ namespace MonitorHub
             MouseDown += Drag;
 
             int y = 44;
-            canvas = new DoubleBufferedPanel { Left = 20, Top = y, Width = 820, Height = 360, BackColor = BG };
-            canvas.Paint += DrawMonitors; canvas.MouseDown += CanvasDown; canvas.MouseMove += CanvasMove; canvas.MouseUp += CanvasUp; Controls.Add(canvas); y += 372;
+            canvas = new DoubleBufferedPanel { Left = 20, Top = y, Width = 820, Height = 334, BackColor = BG };
+            canvas.Paint += DrawMonitors; canvas.MouseDown += CanvasDown; canvas.MouseMove += CanvasMove; canvas.MouseUp += CanvasUp; Controls.Add(canvas); y += 344;
 
             priBtn = new FlatBtn(L.T("Definir como principal")) { Left = 20, Top = y - 4, Width = 340, Height = 42, Radius = 21 };
             priBtn.Font = UI.F("Segoe UI Semibold", 10.5f); priBtn.SetActive(true);
@@ -651,9 +652,9 @@ namespace MonitorHub
                 if (m.Primary) { info.Text = L.T("O monitor principal não pode ser desativado."); return; }
                 m.Enabled = false; info.Text = L.F("{0} será desativado. Clique em Aplicar.", m.Short); Refresh2();
             };
-            Controls.Add(disBtn); y += 52;
+            Controls.Add(disBtn); y += 56;
 
-            Controls.Add(Title(L.T("RESOLUÇÃO"), y)); y += 26;
+            Controls.Add(Title(L.T("RESOLUÇÃO"), y)); y += 32;
             resBox = new DarkDrop { Left = 20, Top = y - 2, Width = 280, Height = 36 };
             resBox.SelectedIndexChanged += delegate { if (resBox.SelectedItem != null) { var s = ((ResItem)resBox.SelectedItem).S; mons[sel].W = s.Width; mons[sel].H = s.Height; FillHz(); canvas.Invalidate(); } };
             Controls.Add(resBox);
@@ -662,8 +663,8 @@ namespace MonitorHub
             hzBox.SelectedIndexChanged += delegate { if (hzBox.SelectedItem != null) { mons[sel].Hz = ((HzItem)hzBox.SelectedItem).Hz; canvas.Invalidate(); } };
             Controls.Add(hzBox); y += 44;
 
-            int scaleY = y; Controls.Add(Title(L.T("ESCALA DO WINDOWS"), y)); y += 28;
-            scaleRow = new FlowLayoutPanel { Left = 20, Top = y, Width = 820, Height = 44 }; Controls.Add(scaleRow); y += 56;
+            int scaleY = y; Controls.Add(Title(L.T("ESCALA DO WINDOWS"), y)); y += 34;
+            scaleRow = new FlowLayoutPanel { Left = 20, Top = y, Width = 820, Height = 46 }; Controls.Add(scaleRow); y += 56;
 
             info = new Label { Left = 20, Top = y + 10, Width = 225, Height = 24, ForeColor = Color.Gray }; Controls.Add(info);
             var cal = new FlatBtn("◐  " + L.T("Calibração de cores")) { Left = 250, Top = y, Width = 175 }; cal.Click += delegate { CalibForm.Open(false); }; Controls.Add(cal);
@@ -709,7 +710,7 @@ namespace MonitorHub
         void BuildSide()
         {
             int x = 16, w = LW - 20;
-            var lang = new FlatBtn("🌐  Language · " + L.Codes[L.Cur].ToUpper()) { Left = x, Top = 40, Width = 150, Height = 30, Radius = 15 };
+            var lang = new FlatBtn("🌐  Language · " + L.Codes[L.Cur].ToUpper()) { Left = x, Top = 40, Width = 190, Height = 34, Radius = 15 };
             lang.Font = UI.F("Segoe UI", 8.5f);
             lang.Click += delegate
             {
@@ -723,9 +724,9 @@ namespace MonitorHub
                 cm.Show(lang, new Point(0, lang.Height + 4));
             };
             Controls.Add(lang);
-            int top = 84;
+            int top = 88;
             var t = Title(L.T("CONFIGURAÇÕES"), top); t.Left = x + 4; Controls.Add(t);
-            var save = new FlatBtn("＋  " + L.T("Salvar configuração")) { Left = x, Top = top + 26, Width = w, Height = 38, Radius = 19 };
+            var save = new FlatBtn("＋  " + L.T("Salvar configuração")) { Left = x, Top = top + 32, Width = w, Height = 38, Radius = 19 };
             save.SetActive(true); save.Font = UI.F("Segoe UI Semibold", 9.5f);
             save.Click += delegate
             {
@@ -733,8 +734,8 @@ namespace MonitorHub
                 Presets.Save(n, mons); FillPresets(); info.Text = L.F("Configuração \"{0}\" salva.", n);
             };
             Controls.Add(save);
-            var t2 = Title(L.T("SALVAS"), top + 80); t2.Left = x + 4; Controls.Add(t2);
-            var box = new RoundPanel { Left = x, Top = top + 104, Width = w, Height = BaseSize.Height - (top + 104) - 16 - 44 };
+            var t2 = Title(L.T("SALVAS"), top + 84); t2.Left = x + 4; Controls.Add(t2);
+            var box = new RoundPanel { Left = x, Top = top + 112, Width = w, Height = BaseSize.Height - (top + 112) - 16 - 46 };
             var st = new FlatBtn("") { Left = x, Top = BaseSize.Height - 16 - 34, Width = w, Height = 34, Radius = 17 };
             st.Font = UI.F("Segoe UI", 9f);
             Action upd = () => { st.Text = (Startup.On ? "☑  " : "☐  ") + L.T("Iniciar com o Windows"); st.SetActive(false); st.Invalidate(); };
@@ -946,7 +947,7 @@ namespace MonitorHub
                 if (m.Primary)
                 {
                     var tf = UI.F("Segoe UI Semibold", 8f); var tsz = g.MeasureString(L.T("PRINCIPAL"), tf);
-                    var tag = new RectangleF(r.X + r.Width / 2 - tsz.Width / 2 - 8, r.Y + 6, tsz.Width + 16, 18);
+                    var tag = new RectangleF(r.X + r.Width / 2 - tsz.Width / 2 - 8, r.Y + 6, tsz.Width + 16, 24);
                     using (var tp = Round(tag, 18)) using (var tb = new SolidBrush(ACC)) g.FillPath(tb, tp);
                     g.DrawString(L.T("PRINCIPAL"), tf, Brushes.White, tag, sf);
                 }
