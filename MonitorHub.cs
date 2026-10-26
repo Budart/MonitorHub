@@ -658,7 +658,7 @@ namespace MonitorHub
             resBox = new DarkDrop { Left = 20, Top = y - 2, Width = 280, Height = 36 };
             resBox.SelectedIndexChanged += delegate { if (resBox.SelectedItem != null) { var s = ((ResItem)resBox.SelectedItem).S; mons[sel].W = s.Width; mons[sel].H = s.Height; FillHz(); canvas.Invalidate(); } };
             Controls.Add(resBox);
-            var hzT = Title(L.T("TAXA DE ATUALIZAÇÃO"), y - 26); hzT.Left = 320; Controls.Add(hzT);
+            var hzT = Title(L.T("TAXA DE ATUALIZAÇÃO"), y - 32); hzT.Left = 320; Controls.Add(hzT);
             hzBox = new DarkDrop { Left = 320, Top = y - 2, Width = 180, Height = 36 };
             hzBox.SelectedIndexChanged += delegate { if (hzBox.SelectedItem != null) { mons[sel].Hz = ((HzItem)hzBox.SelectedItem).Hz; canvas.Invalidate(); } };
             Controls.Add(hzBox); y += 44;
@@ -814,7 +814,12 @@ namespace MonitorHub
             return f.ShowDialog(this) == DialogResult.OK ? tb.Text.Trim() : null;
         }
 
-        Label Title(string t, int y) { return new Label { Text = t, Left = 20, Top = y, AutoSize = true, ForeColor = Color.FromArgb(230, 70, 90), Font = UI.F("Segoe UI Semibold", 10.5f) }; }
+        Label Title(string t, int y)
+        {
+            // rótulo só com o texto (altura justa, sem fundo próprio) para não cobrir o campo de baixo
+            var f = UI.F("Segoe UI Semibold", 10.5f); var sz = UI.Measure(t, f);
+            return new Label { Text = t, Left = 20, Top = y, AutoSize = false, Width = sz.Width + 8, Height = sz.Height + 2, BackColor = Color.Transparent, ForeColor = Color.FromArgb(230, 70, 90), Font = f, UseCompatibleTextRendering = true };
+        }
         Label Lbl(string t, int x, int y) { return new Label { Text = t, Left = x, Top = y, AutoSize = true }; }
 
         class HzItem { public int Hz; public override string ToString() { return Hz + " Hz"; } }
