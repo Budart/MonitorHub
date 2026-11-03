@@ -668,17 +668,24 @@ namespace MonitorHub
 
             info = new Label { Left = 20, Top = y + 10, Width = 225, Height = 24, ForeColor = Color.Gray }; Controls.Add(info);
             var cal = new FlatBtn("◐  " + L.T("Calibração de cores")) { Left = 250, Top = y, Width = 175 }; cal.Click += delegate { CalibForm.Open(false); }; Controls.Add(cal);
+            var blk = new FlatBtn("■  " + L.T("Tela preta")) { Top = y, Width = 120 };
+            blk.Click += delegate
+            {
+                var m = mons[sel]; var scr = Screen.AllScreens.FirstOrDefault(z => z.DeviceName == m.Gdi);
+                if (!m.Enabled || scr == null) { info.Text = L.T("Esse monitor precisa estar ativo."); return; }
+                BlackScreen.Show(scr);
+            };
+            Controls.Add(blk);
             crtBtn = new FlatBtn("▣  " + L.T("Calibração CRT")) { Left = 433, Top = y, Width = 150 }; crtBtn.Click += delegate { OpenCrt(); }; Controls.Add(crtBtn);
             var reload = new FlatBtn(L.T("Recarregar")) { Left = 591, Top = y, Width = 110 }; reload.Click += delegate { Load2(); }; Controls.Add(reload);
             applyBtn = new FlatBtn(L.T("Aplicar")) { Left = 710, Top = y, Width = 130, Height = 40 };
             applyBtn.SetActive(true); applyBtn.Font = UI.F("Segoe UI Semibold", 10.5f); applyBtn.Click += DoApply; Controls.Add(applyBtn);
             // linha de baixo: cada botão do tamanho do seu texto (nada cortado), alinhados à direita
-            int rx = 840;
-            foreach (var b in new FlatBtn[] { applyBtn, reload, crtBtn, cal })
-            {
-                b.Width = Math.Max(b.Width, UI.Measure(b.Text, b.Font).Width + 36);
-                rx -= b.Width; b.Left = rx; rx -= 8;
-            }
+            int rx = 840; var row = new FlatBtn[] { applyBtn, reload, crtBtn, cal, blk };
+            foreach (var b in row) b.Width = UI.Measure(b.Text, b.Font).Width + 36;
+            int total = row.Sum(b => b.Width) + 8 * (row.Length - 1);
+            if (total > 820) { float k = (820f - 8 * (row.Length - 1)) / (total - 8 * (row.Length - 1)); foreach (var b in row) b.Width = (int)(b.Width * k); }   // fonte encolhe sozinha (Shrink)
+            foreach (var b in row) { rx -= b.Width; b.Left = rx; rx -= 8; }
             info.Left = 360; info.Top = scaleY; info.Width = 480; info.Height = 22; info.TextAlign = ContentAlignment.MiddleRight;
 
             // desloca o conteúdo para abrir espaço para a coluna global à esquerda

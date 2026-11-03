@@ -24,6 +24,15 @@ namespace MonitorHub
             new[] { "Gama 2.2", "Olhe de longe ou desfocando a vista: o quadrado central deve se misturar às listras. Mais claro = gama baixa; mais escuro = gama alta." },
             new[] { "Barras de cor", "Compare a saturação. Se um monitor estiver mais vibrante, reduza a saturação dele (modo sRGB ou driver AMD)." },
             new[] { "Rampas de cor", "Vermelho, verde e azul devem crescer suavemente, sem saltos nem mudança de tom." },
+            new[] { "Pixel morto: vermelho", "Procure pontos que não acendem (pixel morto) ou que ficam sempre acesos (pixel preso). H esconde esta dica." },
+            new[] { "Pixel morto: verde", "Procure pontos que não acendem (pixel morto) ou que ficam sempre acesos (pixel preso). H esconde esta dica." },
+            new[] { "Pixel morto: azul", "Procure pontos que não acendem (pixel morto) ou que ficam sempre acesos (pixel preso). H esconde esta dica." },
+            new[] { "Pixel morto: branco", "Procure pontos que não acendem (pixel morto) ou que ficam sempre acesos (pixel preso). H esconde esta dica." },
+            new[] { "Pixel morto: preto", "Procure pontos que não acendem (pixel morto) ou que ficam sempre acesos (pixel preso). H esconde esta dica." },
+            new[] { "Pixel morto: ciano", "Procure pontos que não acendem (pixel morto) ou que ficam sempre acesos (pixel preso). H esconde esta dica." },
+            new[] { "Pixel morto: magenta", "Procure pontos que não acendem (pixel morto) ou que ficam sempre acesos (pixel preso). H esconde esta dica." },
+            new[] { "Pixel morto: amarelo", "Procure pontos que não acendem (pixel morto) ou que ficam sempre acesos (pixel preso). H esconde esta dica." },
+
         };
         static readonly string[][] CrtPats =
         {
@@ -116,8 +125,11 @@ namespace MonitorHub
         }
 
         // ================= cores =================
+        // cores sólidas para achar pixels mortos/presos (padrões 11 a 18)
+        static readonly Color[] Solid = { Color.FromArgb(255, 0, 0), Color.FromArgb(0, 255, 0), Color.FromArgb(0, 0, 255), Color.White, Color.Black, Color.FromArgb(0, 255, 255), Color.FromArgb(255, 0, 255), Color.FromArgb(255, 255, 0) };
         static void PaintColor(Graphics g, int W, int H)
         {
+            if (Idx >= 10) { g.Clear(Solid[Idx - 10]); return; }
             switch (Idx)
             {
                 case 0: g.Clear(G(255)); break;
@@ -303,5 +315,18 @@ namespace MonitorHub
             using (var p = MainForm.Round(new RectangleF(0.5f, 0.5f, Width - 1.5f, Height - 1.5f), 24))
             { using (var b = new SolidBrush(Color.FromArgb(16, 16, 22))) e.Graphics.FillPath(b, p); using (var pn = new Pen(Color.FromArgb(48, 48, 60))) e.Graphics.DrawPath(pn, p); }
         }
+    }
+
+    // Tela preta: cobre o monitor inteiro até um clique nele
+    public class BlackScreen : Form
+    {
+        public static void Show(Screen s)
+        {
+            var f = new BlackScreen { FormBorderStyle = FormBorderStyle.None, StartPosition = FormStartPosition.Manual, Bounds = s.Bounds, TopMost = true, ShowInTaskbar = false, BackColor = Color.Black };
+            f.Tag = s.Bounds; f.Show(); f.Bounds = s.Bounds;
+        }
+        protected override void OnMouseClick(MouseEventArgs e) { Close(); }
+        protected override void OnResize(EventArgs e) { base.OnResize(e); if (Tag is Rectangle && Bounds != (Rectangle)Tag) Bounds = (Rectangle)Tag; }
+        protected override void WndProc(ref Message m) { if (m.Msg == 0x02E0) { if (Tag is Rectangle) Bounds = (Rectangle)Tag; return; } base.WndProc(ref m); }
     }
 }
