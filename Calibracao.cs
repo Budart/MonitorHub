@@ -61,7 +61,7 @@ namespace MonitorHub
             Close_(); Crt = crt; Pats = crt ? CrtPats : ColorPats; Idx = 0; Param = 0;
             foreach (var s in (only != null ? new[] { only } : Screen.AllScreens))
             {
-                var area = crt ? s.Bounds : s.WorkingArea;   // CRT: tela cheia de verdade
+                var area = s.Bounds;   // tela cheia (cobre a barra de tarefas)
                 var f = new CalibForm { FormBorderStyle = FormBorderStyle.None, StartPosition = FormStartPosition.Manual, Bounds = area, TopMost = crt, ShowInTaskbar = false, BackColor = Color.Black, KeyPreview = true };
                 f.SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint, true);
                 f.Tag = area;
